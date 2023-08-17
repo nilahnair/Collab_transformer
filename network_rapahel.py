@@ -115,6 +115,8 @@ class Network(nn.Module):
         print(x.shape)
         #to [B,D,Win]
         x = x.view(x.size()[0], x.size()[1], x.size()[2])
+        print('shape after view')
+        print(x.shape)
         
         #input embedding
         for conv_layer in self.input_proj:
