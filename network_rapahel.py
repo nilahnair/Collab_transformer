@@ -45,7 +45,7 @@ class Network(nn.Module):
         n_layers=6
         n_embedding_layers=4
         use_pos_embedding=True
-        activation_function='relu'
+        activation_function='gelu'
         
         #additional 
         if self.config['NB_sensor_channels']==126:
