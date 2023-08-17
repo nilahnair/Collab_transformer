@@ -250,8 +250,8 @@ def configuration(dataset_idx, network_idx, output_idx, usage_modus_idx=0, datas
     filter_size = {'mocap': 5, 'mbientlab': 5, 'virtual': 5, 'mocap_half': 5, 'virtual_quarter': 5, 'mocap_quarter': 5,
                    'mbientlab_50_p': 5, 'mbientlab_10_p': 5, 'mbientlab_50_r': 5, 'mbientlab_10_r': 5,
                    'mbientlab_quarter': 5, 'motionminers_real': 5, 'motionminers_flw': 5, 'motionsense':5}
-    num_filters = {'mocap': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
-                   'mbientlab': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
+    num_filters = {'mocap': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64, 'transformer': 64},
+                   'mbientlab': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64, 'transformer': 64},
                    'virtual': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
                    'mocap_half': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
                    'virtual_quarter': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
@@ -263,7 +263,7 @@ def configuration(dataset_idx, network_idx, output_idx, usage_modus_idx=0, datas
                    'mbientlab_quarter': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
                    'motionminers_real': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
                    'motionminers_flw': {'cnn': 64, 'lstm': 64, 'cnn_imu': 64},
-                   'motionsense':{'cnn': 64, 'lstm': 64, 'cnn_imu': 64}}
+                   'motionsense':{'cnn': 64, 'lstm': 64, 'cnn_imu': 64, 'transformer': 64}}
 
     freeze_options = [False, True]
 
