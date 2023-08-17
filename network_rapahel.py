@@ -108,7 +108,11 @@ class Network(nn.Module):
         #is inout [B,Win,D] then reshape to [B,D,Win]
         #x = x.transpose(1, 2)
         #here[B,1,D,Win] to [B,D,Win,1]
+        print('shape before permutation')
+        print(x.shape)
         x=x.permute(0,2,3,1)
+        print('shape after permutation')
+        print(x.shape)
         #to [B,D,Win]
         x = x.view(x.size()[0], x.size()[1], x.size()[2])
         
