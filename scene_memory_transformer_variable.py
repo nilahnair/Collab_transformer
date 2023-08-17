@@ -1,3 +1,7 @@
+'''
+Aurthor: Jorge De Heuvels 
+'''
+
 from stable_baselines3.common.utils import get_device
 from typing import Dict, List, Tuple, Type, Union
 from torch.nn.modules.transformer import _get_activation_fn
