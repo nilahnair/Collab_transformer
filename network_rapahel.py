@@ -76,7 +76,7 @@ class Network(nn.Module):
         
         #set transformer encoder
         encoder_layer = TransformerEncoderLayer(d_model = self.transformer_dim, nhead = self.n_head, dim_feedforward = self.dim_fc,
-                                       dropout = 0.1, activation = self.activation_function)
+                                       dropout = 0.1, activation = 'gelu')
         self.transformer_encoder = TransformerEncoder(encoder_layer, num_layers = self.n_layers, norm = nn.LayerNorm(self.transformer_dim))
         
         #setting mlp layers
