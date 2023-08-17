@@ -107,17 +107,13 @@ class Network(nn.Module):
         '''
         #is inout [B,Win,D] then reshape to [B,D,Win]
         #x = x.transpose(1, 2)
-        #here[B,1,D,Win] to [B,D,Win,1]
-        print('shape before permutation')
-        print(x.shape)
+        #here[B,1,Win,D] to [B,Win,D,1]
         x=x.permute(0,2,3,1)
-        print('shape after permutation')
-        print(x.shape)
         #to [B,D,Win]
         x = x.view(x.size()[0], x.size()[1], x.size()[2])
-        print('shape after view')
-        print(x.shape)
-        
+        #testing if the below line makes things work
+        x.x.permute(0,2,1)
+               
         #input embedding
         for conv_layer in self.input_proj:
             x = conv_layer(x)
