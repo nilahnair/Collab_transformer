@@ -112,7 +112,7 @@ class Network(nn.Module):
         #to [B,D,Win]
         x = x.view(x.size()[0], x.size()[1], x.size()[2])
         #testing if the below line makes things work
-        x.x.permute(0,2,1)
+        x=x.permute(0,2,1)
                
         #input embedding
         for conv_layer in self.input_proj:
