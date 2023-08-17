@@ -51,8 +51,8 @@ class Network(nn.Module):
         if self.config['NB_sensor_channels']==126:
             self.input_dim = 126
         self.output_dim = self.config['num_classes']
-        window_size = self.config['sliding_window_length']
-        self.transformer_dim = transformer_dim if n_embedding_layers > 0 else input_dim
+        self.window_size = self.config['sliding_window_length']
+        self.transformer_dim = transformer_dim if n_embedding_layers > 0 else self.input_dim
         self.n_head = get_nhead(self.transformer_dim, n_head)
         self.dim_fc = dim_fc
         self.n_layers = n_layers
@@ -81,7 +81,7 @@ class Network(nn.Module):
         
         #setting mlp layers
         self.imu_head = nn.Sequential(nn.LayerNorm(self.transformer_dim), nn.Linear(self.transformer_dim, self.transformer_dim//4),
-                                      self.activation_function, nn.Dropout(0.1), nn.Linear(self.transformer_dim//4, output_dim))
+                                      self.activation_function, nn.Dropout(0.1), nn.Linear(self.transformer_dim//4, self.output_dim))
         
         self.softmax = nn.Softmax()
         
