@@ -3,6 +3,7 @@
 Created on Wed Aug 16 09:04:02 2023
 
 @author: nilah
+code adapted from jorge de huevels
 
 d_model= 512? or 64?
 """
@@ -15,8 +16,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F 
 import torch.optim as optim
+
 from torch.nn.modules.activation import MultiheadAttention
 from torch.nn.modules.normalization import LayerNorm
+from torch.nn.modules.transformer import _get_activation_fn
+from torch.nn.modules.container import ModuleList
+from torch.nn.init import xavier_uniform_
+
+from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
+
+from sb3_rl.feature_extractors.common.positional_encoding import PositionalEncoding
+from positional_encodings.torch_encodings import PositionalEncoding1D, PositionalEncoding2D, PositionalEncoding3D, Summer
 
 
 import numpy as np
@@ -38,17 +49,35 @@ class Network(nn.Module):
         logging.info('            Network: Constructor')
         
         self.config = config
+        transformer_dim=64
+        n_head=8
+        dim_fully_connected=64
+        dim_fc=128
+        n_layers=6
+        n_embedding_layers=4
+        use_pos_embedding=True
+        activation_function='gelu'
+        
+        #additional 
+        if self.config['NB_sensor_channels']==126:
+            self.input_dim = 126
+        self.output_dim = self.config['num_classes']
+        self.window_size = self.config['sliding_window_length']
+        self.transformer_dim = transformer_dim if n_embedding_layers > 0 else self.input_dim
+        self.dim_fc = dim_fc
+        self.dim_fully_connected = dim_fully_connected
+        self.n_layers = n_layers
+        self.n_embedding_layers = n_embedding_layers
 
-        self.multihead_attn = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
-                                                 **factory_kwargs)
+        self.multihead_attn = MultiheadAttention( n_head, d_model=self.dim_fully_connected, batch_first=batch_first, dropout= 0.1)
         # Implementation of Feedforward model
-        self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
+        self.linear1 = Linear(d_model, dim_feedforward,)
         self.dropout = Dropout(dropout)
-        self.linear2 = Linear(dim_feedforward, d_model, **factory_kwargs)
+        self.linear2 = Linear(dim_feedforward, d_model)
 
         self.norm_first = norm_first
-        self.norm2 = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
-        self.norm3 = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
+        self.norm2 = LayerNorm(d_model, eps=layer_norm_eps)
+        self.norm3 = LayerNorm(d_model, eps=layer_norm_eps)
         self.dropout2 = Dropout(dropout)
         self.dropout3 = Dropout(dropout)
         

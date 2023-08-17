@@ -706,7 +706,7 @@ class Network_User(object):
         # Creating a network and loading the weights for testing
         # network is loaded from saved file in the folder of experiment
         logging.info('        Network_User:    Test:    creating network')
-        if self.config['network'] == 'cnn' or self.config['network'] == 'cnn_imu':
+        if self.config['network'] == 'cnn' or self.config['network'] == 'cnn_imu' or self.config['network']=='transformer':
             network_obj = Network(self.config)
 
             #Loading the model

@@ -159,7 +159,7 @@ def configuration(dataset_idx, network_idx, output_idx, usage_modus_idx=0, datas
     epochs = {'mocap': {'cnn': {'softmax': 6, 'attribute': 6},
                         'lstm': {'softmax': 6, 'attribute': 6},
                         'cnn_imu': {'softmax': 6, 'attribute': 6},
-                        'transformer': {'softmax': 6, 'attribute': 6}},
+                        'transformer': {'softmax': 15, 'attribute': 6}},
               'mbientlab': {'cnn': {'softmax': 10, 'attribute': 10},
                             'lstm': {'softmax': 10, 'attribute': 10},
                             'cnn_imu': {'softmax': 10, 'attribute': 10},
