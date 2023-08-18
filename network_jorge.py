@@ -12,25 +12,19 @@ from __future__ import print_function
 import logging
 
 
-import torch
+import torch as th
 import torch.nn as nn
 import torch.nn.functional as F 
 import torch.optim as optim
 
-from torch.nn.modules.activation import MultiheadAttention
-from torch.nn.modules.normalization import LayerNorm
-from torch.nn.modules.transformer import _get_activation_fn
-from torch.nn.modules.container import ModuleList
-from torch.nn.modules.dropout import Dropout
-from torch.nn.modules.linear import Linear
-
 from torch.nn.init import xavier_uniform_
 
-#from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
+from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
 
 from sb3_rl.feature_extractors.common.positional_encoding import PositionalEncoding
 from positional_encodings.torch_encodings import PositionalEncoding1D, PositionalEncoding2D, PositionalEncoding3D, Summer
+
 
 
 import numpy as np
@@ -60,6 +54,13 @@ class Network(nn.Module):
         n_embedding_layers=4
         use_pos_embedding=True
         activation_function='gelu'
+        norm_first = True
+        layer_norm_eps = 1e-5
+        
+        #not sure of these values
+        reverse_temporal_encoding = False
+        fc_input_arch_list = [[32], [16], [16]]
+        embedding_bias= False
         
         #additional 
         if self.config['NB_sensor_channels']==126:
@@ -72,62 +73,96 @@ class Network(nn.Module):
         self.dim_fully_connected = dim_fully_connected
         self.n_layers = n_layers
         self.n_embedding_layers = n_embedding_layers
-
-        self.multihead_attn = MultiheadAttention( n_head, d_model=self.dim_fully_connected, batch_first='batch_first', dropout= 0.1)
-        # Implementation of Feedforward model
-        self.linear1 = Linear(d_model, dim_feedforward,)
-        self.dropout = Dropout(dropout)
-        self.linear2 = Linear(dim_feedforward, d_model)
-
-        self.norm_first = norm_first
-        self.norm2 = LayerNorm(d_model, eps=layer_norm_eps)
-        self.norm3 = LayerNorm(d_model, eps=layer_norm_eps)
-        self.dropout2 = Dropout(dropout)
-        self.dropout3 = Dropout(dropout)
+        self.temporal_encoding_type = "wave"
+        mlp_embedding: bool = False
         
         
-    def forward(
-        self,
-        tgt: Tensor,
-        memory: Tensor,
-        memory_mask: Optional[Tensor] = None,
-        memory_key_padding_mask: Optional[Tensor] = None,
-        memory_is_causal: bool = False,
-    ) -> Tensor:
-        r"""Pass the inputs (and mask) through the decoder layer.
+        # Positional encoding (temporal)
+        if self.temporal_encoding_type == "single":
+            #self.temporal_encoding_cached = th.exp(-1 * torch.arange(self.dim_temporal).to(get_device("auto")))  # TODO
+            if reverse_temporal_encoding:
+                self.temporal_encoding_cached = th.flip(self.temporal_encoding_cached, dims=[-1])
+            self.positional_encoding = self.add_time_encoding_to_tensor
 
-        Args:
-            tgt: the sequence to the decoder layer (required).
-            memory: the sequence from the last layer of the encoder (required).
-            memory_mask: the mask for the memory sequence (optional).
-            memory_key_padding_mask: the mask for the memory keys per batch (optional).
-            memory_is_causal: If specified, applies a causal mask as tgt mask.
-                Mutually exclusive with providing memory_mask. Default: ``False``.
-        Shape:
-            see the docs in Transformer class.
-        """
+        elif self.temporal_encoding_type == "wave":
+            self.positional_encoding = Summer(PositionalEncoding1D(self.dim_fully_connected))
+            
+        #input embedding
+        # FC LAYER NETWORKS - INDIVIDUAL
+        # ===================================================================================================
+        self.mlp_embedding = [mlp_embedding] * len(fc_input_arch_list) if isinstance(mlp_embedding, bool) else mlp_embedding
+        self.fc_input_embedding = th.nn.ModuleList()
+        for a, architecture in enumerate(fc_input_arch_list):
+            if architecture[0] > 0:
+                if self.mlp_embedding[a]:
+                    fc_input_embedding = create_mlp(self.dim_input[a], 0, architecture, th.nn.ReLU, squash_output=False)
+                else:
+                    fc_input_embedding = [th.nn.Linear(self.dim_input[a], architecture[0], bias=embedding_bias)]
+            else:
+                fc_input_embedding = [th.nn.Identity()]
+            self.fc_input_embedding.append(th.nn.Sequential(*fc_input_embedding))
 
-        x = tgt
-        if self.norm_first:
-            x = x + self._mha_block(self.norm2(x), memory, memory_mask, memory_key_padding_mask, memory_is_causal)
-            x = x + self._ff_block(self.norm3(x))
+        # FC LAYER NETWORKS - CONCATENATED
+        # ===================================================================================================
+        if mlp_embedding:
+            fc_concat_embedding = create_mlp(
+                input_dim=self.dim_merged_embedded,
+                output_dim=0,
+                net_arch=[self.dim_fully_connected],
+                activation_fn=th.nn.ReLU,
+                squash_output=False,
+            )
         else:
-            x = self.norm2(x + self._mha_block(x, memory, memory_mask, memory_key_padding_mask, memory_is_causal))
-            x = self.norm3(x + self._ff_block(x))
+            fc_concat_embedding = [th.nn.Linear(self.dim_merged_embedded, self.dim_fully_connected, bias=embedding_bias)]
+        self.fc_concat_embedding = th.nn.Sequential(*fc_concat_embedding)
+        
+        # TRANSFORMER ENCODER
+        # ===================================================================================================
+        transformer_encoder = th.nn.TransformerEncoderLayer(
+            d_model=self.dim_fully_connected,  # TODO Check
+            nhead=self.num_transformer_heads,
+            dim_feedforward=self.dim_transformer_feedforward,
+            norm_first=self.norm_first,
+            batch_first=True,
+            dropout=self.dropout,
+        )
+        self.transformer_encoder = th.nn.TransformerEncoder(
+            encoder_layer=transformer_encoder,
+            num_layers=self.num_transformer_layers,
+        )
+        
+        self.transformer_encoder.apply(init_weights_xavier)
+        
+        self.softmax = nn.Softmax()
+        
+    def forward(self,x):
+        
+      # OPTIONAL Positional Encoding "Single"
+        # ====================================================================
+        if self.temporal_encoding_type == "single":
+            input[self.temporal_encoding_vec_ind] = self.self.positional_encoding(input[self.temporal_encoding_vec_ind])
+
+        # Transformer Embedding
+        # ====================================================================
+        input_embedded = [fc_input_embedding(input[i]) for i, fc_input_embedding in enumerate(self.fc_input_embedding)]
+        x = th.concatenate(input_embedded, dim=2)
+        x = self.fc_concat_embedding(x)
+
+        # OPTIONAL Positional Encoding "Wave"
+        # ====================================================================
+        if self.temporal_encoding_type == "wave":
+            x = self.positional_encoding(x)
+
+        # Transformer Encoder
+        # ====================================================================
+        x = self.transformer_encoder(
+            src=x,
+            mask=self.mask if self.mask_future else None,
+            # is_causal=self.memory_is_causal,
+        )
+        
+        if not self.training:
+            if self.config['output'] == 'softmax':
+                x = self.softmax(x)
 
         return x
-
-    # multihead attention block
-    def _mha_block(self, x: Tensor, mem: Tensor,
-                   attn_mask: Optional[Tensor], key_padding_mask: Optional[Tensor], is_causal: bool = False) -> Tensor:
-        x = self.multihead_attn(x, mem, mem,
-                                attn_mask=attn_mask,
-                                key_padding_mask=key_padding_mask,
-                                is_causal=is_causal,
-                                need_weights=False)[0]
-        return self.dropout2(x)
-
-    # feed forward block
-    def _ff_block(self, x: Tensor) -> Tensor:
-        x = self.linear2(self.dropout(self.activation(self.linear1(x))))
-        return self.dropout3(x)
