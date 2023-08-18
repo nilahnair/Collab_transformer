@@ -68,7 +68,7 @@ class Network(nn.Module):
         self.output_dim = self.config['num_classes']
         self.window_size = self.config['sliding_window_length']
         self.transformer_dim = transformer_dim if n_embedding_layers > 0 else self.input_dim
-        d_model=self.dim_fully_connected
+        d_model= dim_fully_connected
         self.dim_fc = dim_fc
         self.dim_fully_connected = dim_fully_connected
         self.n_layers = n_layers
