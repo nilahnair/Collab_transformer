@@ -19,10 +19,10 @@ import torch.optim as optim
 
 from torch.nn.init import xavier_uniform_
 
-from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
+#from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
+#from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
 
-from sb3_rl.feature_extractors.common.positional_encoding import PositionalEncoding
+#from sb3_rl.feature_extractors.common.positional_encoding import PositionalEncoding
 from positional_encodings.torch_encodings import PositionalEncoding1D, PositionalEncoding2D, PositionalEncoding3D, Summer
 
 
