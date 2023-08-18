@@ -21,9 +21,12 @@ from torch.nn.modules.activation import MultiheadAttention
 from torch.nn.modules.normalization import LayerNorm
 from torch.nn.modules.transformer import _get_activation_fn
 from torch.nn.modules.container import ModuleList
+from torch.nn.modules.dropout import Dropout
+from torch.nn.modules.linear import Linear
+
 from torch.nn.init import xavier_uniform_
 
-from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
+#from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
 
 from sb3_rl.feature_extractors.common.positional_encoding import PositionalEncoding
@@ -64,12 +67,13 @@ class Network(nn.Module):
         self.output_dim = self.config['num_classes']
         self.window_size = self.config['sliding_window_length']
         self.transformer_dim = transformer_dim if n_embedding_layers > 0 else self.input_dim
+        d_model=self.dim_fully_connected
         self.dim_fc = dim_fc
         self.dim_fully_connected = dim_fully_connected
         self.n_layers = n_layers
         self.n_embedding_layers = n_embedding_layers
 
-        self.multihead_attn = MultiheadAttention( n_head, d_model=self.dim_fully_connected, batch_first=batch_first, dropout= 0.1)
+        self.multihead_attn = MultiheadAttention( n_head, d_model=self.dim_fully_connected, batch_first='batch_first', dropout= 0.1)
         # Implementation of Feedforward model
         self.linear1 = Linear(d_model, dim_feedforward,)
         self.dropout = Dropout(dropout)
