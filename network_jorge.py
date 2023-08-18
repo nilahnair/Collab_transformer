@@ -20,7 +20,7 @@ import torch.optim as optim
 from torch.nn.init import xavier_uniform_
 
 #from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
-#from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
 
 #from sb3_rl.feature_extractors.common.positional_encoding import PositionalEncoding
 from positional_encodings.torch_encodings import PositionalEncoding1D, PositionalEncoding2D, PositionalEncoding3D, Summer
@@ -95,9 +95,9 @@ class Network(nn.Module):
         for a, architecture in enumerate(fc_input_arch_list):
             if architecture[0] > 0:
                 if self.mlp_embedding[a]:
-                    fc_input_embedding = create_mlp(self.dim_input[a], 0, architecture, th.nn.ReLU, squash_output=False)
+                    fc_input_embedding = create_mlp(self.input_dim[a], 0, architecture, th.nn.ReLU, squash_output=False)
                 else:
-                    fc_input_embedding = [th.nn.Linear(self.dim_input[a], architecture[0], bias=embedding_bias)]
+                    fc_input_embedding = [th.nn.Linear(self.input_dim[a], architecture[0], bias=embedding_bias)]
             else:
                 fc_input_embedding = [th.nn.Identity()]
             self.fc_input_embedding.append(th.nn.Sequential(*fc_input_embedding))
