@@ -144,7 +144,8 @@ class Network(nn.Module):
         #input embedding
         for mlp_layer in self.input_proj:
             x = mlp_layer(x)
-            
+        print('after getting embedding')
+        print(x.shape)
         # Reshaping: [B, D', Win] -> [Win, B, D'] 
         x = x.permute(2, 0, 1)
         
