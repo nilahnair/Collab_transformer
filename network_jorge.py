@@ -138,12 +138,11 @@ class Network(nn.Module):
         x=x.permute(0,2,3,1)
         #to [B,D,Win]
         x = x.view(x.size()[0], x.size()[1], x.size()[2])
-        #testing if the below line makes things work
-        x=x.permute(0,2,1)
+        #to [B,Win,D]
+        #x=x.permute(0,2,1)
                
         #input embedding
         for mlp_layer in self.input_proj:
-            print(mlp_layer.shape)
             x = mlp_layer(x)
             
         # Reshaping: [B, D', Win] -> [Win, B, D'] 
