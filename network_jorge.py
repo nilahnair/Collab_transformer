@@ -76,7 +76,7 @@ class Network(nn.Module):
         self.n_embedding_layers = n_embedding_layers
         self.temporal_encoding_type = "wave"
         mlp_embedding: bool = False
-        self.activation_function = activation_function
+        self.activation_function = nn.ReLU()
         self.norm_first = norm_first
         self.dropout=0.4
         
