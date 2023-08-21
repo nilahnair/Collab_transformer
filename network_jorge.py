@@ -50,7 +50,7 @@ class Network(nn.Module):
         n_head=8
         dim_fully_connected=64
         dim_fc=128
-        n_layers=1
+        n_layers=6
         n_embedding_layers=4
         use_pos_embedding=True
         activation_function='relu'
