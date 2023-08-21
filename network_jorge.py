@@ -77,6 +77,7 @@ class Network(nn.Module):
         self.temporal_encoding_type = "wave"
         mlp_embedding: bool = False
         self.activation_function = activation_function
+        self.norm_first = norm_first
         
         
         # Positional encoding (temporal)
@@ -102,7 +103,7 @@ class Network(nn.Module):
         transformer_encoder = th.nn.TransformerEncoderLayer(
             d_model=self.dim_fully_connected,  # TODO Check
             nhead=self.n_heads,
-            dim_feedforward=self.dim_transformer_feedforward,
+            dim_feedforward=self.dim_fc,
             norm_first=self.norm_first,
             batch_first=True,
             dropout=self.dropout,
