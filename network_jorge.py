@@ -50,10 +50,10 @@ class Network(nn.Module):
         n_head=8
         dim_fully_connected=64
         dim_fc=128
-        n_layers=6
+        n_layers=1
         n_embedding_layers=4
         use_pos_embedding=True
-        activation_function='gelu'
+        activation_function='relu'
         norm_first = True
         layer_norm_eps = 1e-5
         
@@ -88,34 +88,13 @@ class Network(nn.Module):
             self.positional_encoding = Summer(PositionalEncoding1D(self.dim_fully_connected))
             
         #input embedding
-        # FC LAYER NETWORKS - INDIVIDUAL
-        # ===================================================================================================
-        self.mlp_embedding = [mlp_embedding] * len(fc_input_arch_list) if isinstance(mlp_embedding, bool) else mlp_embedding
-        self.fc_input_embedding = th.nn.ModuleList()
-        for a, architecture in enumerate(fc_input_arch_list):
-            if architecture[0] > 0:
-                if self.mlp_embedding[a]:
-                    fc_input_embedding = create_mlp(self.input_dim[a], 0, architecture, th.nn.ReLU, squash_output=False)
-                else:
-                    fc_input_embedding = [th.nn.Linear(self.input_dim[a], architecture[0], bias=embedding_bias)]
-            else:
-                fc_input_embedding = [th.nn.Identity()]
-            self.fc_input_embedding.append(th.nn.Sequential(*fc_input_embedding))
+        self.input_proj = nn.ModuleList()
+        for _ in range(self.n_embedding_layers):
+            d_in = self.input_dim if len(self.input_proj) == 0 else self.transformer_dim
+            mlp_layer = nn.Sequential(nn.Linear(d_in, self.transformer_dim), self.activation_function)
+            self.input_proj.append(mlp_layer)
 
-        # FC LAYER NETWORKS - CONCATENATED
-        # ===================================================================================================
-        if mlp_embedding:
-            fc_concat_embedding = create_mlp(
-                input_dim=self.dim_merged_embedded,
-                output_dim=0,
-                net_arch=[self.dim_fully_connected],
-                activation_fn=th.nn.ReLU,
-                squash_output=False,
-            )
-        else:
-            fc_concat_embedding = [th.nn.Linear(self.dim_merged_embedded, self.dim_fully_connected, bias=embedding_bias)]
-        self.fc_concat_embedding = th.nn.Sequential(*fc_concat_embedding)
-        
+
         # TRANSFORMER ENCODER
         # ===================================================================================================
         transformer_encoder = th.nn.TransformerEncoderLayer(
@@ -131,38 +110,47 @@ class Network(nn.Module):
             num_layers=self.num_transformer_layers,
         )
         
+         #setting mlp layers
+        self.imu_head = nn.Sequential(nn.LayerNorm(self.transformer_dim), nn.Linear(self.transformer_dim, self.transformer_dim//4),
+                                      self.activation_function, nn.Dropout(0.1), nn.Linear(self.transformer_dim//4, self.output_dim))
+        
+        
         self.transformer_encoder.apply(init_weights_xavier)
         
         self.softmax = nn.Softmax()
         
     def forward(self,x):
         
-      # OPTIONAL Positional Encoding "Single"
-        # ====================================================================
-        if self.temporal_encoding_type == "single":
-            input[self.temporal_encoding_vec_ind] = self.self.positional_encoding(input[self.temporal_encoding_vec_ind])
-
-        # Transformer Embedding
-        # ====================================================================
-        input_embedded = [fc_input_embedding(input[i]) for i, fc_input_embedding in enumerate(self.fc_input_embedding)]
-        x = th.concatenate(input_embedded, dim=2)
-        x = self.fc_concat_embedding(x)
-
-        # OPTIONAL Positional Encoding "Wave"
-        # ====================================================================
-        if self.temporal_encoding_type == "wave":
-            x = self.positional_encoding(x)
-
-        # Transformer Encoder
-        # ====================================================================
-        x = self.transformer_encoder(
-            src=x,
-            mask=self.mask if self.mask_future else None,
-            # is_causal=self.memory_is_causal,
-        )
+       #is inout [B,Win,D] then reshape to [B,D,Win]
+        #x = x.transpose(1, 2)
+        #here[B,1,Win,D] to [B,Win,D,1]
+        x=x.permute(0,2,3,1)
+        #to [B,D,Win]
+        x = x.view(x.size()[0], x.size()[1], x.size()[2])
+        #testing if the below line makes things work
+        x=x.permute(0,2,1)
+               
+        #input embedding
+        for mlp_layer in self.input_proj:
+            x = mlp_layer(x)
+            
+        # Reshaping: [B, D', Win] -> [Win, B, D'] 
+        x = x.permute(2, 0, 1)
         
+        # Prepend class token: [Win, B, D']  -> [Win+1, B, D']
+        cls_token = self.cls_token.unsqueeze(1).repeat(1, x.shape[1], 1)
+        x = th.cat([cls_token, x])
+        
+        #position embedding
+        if self.use_pos_embedding:
+            x += self.position_embed
+            
+        #transformer
+        # Transformer Encoder pass
+        x = self.transformer_encoder(x)[0]
+        
+        x= self.imu_head(x)
+    
         if not self.training:
             if self.config['output'] == 'softmax':
                 x = self.softmax(x)
-
-        return x
