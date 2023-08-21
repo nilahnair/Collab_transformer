@@ -92,7 +92,7 @@ class Network(nn.Module):
         self.input_proj = nn.ModuleList()
         for _ in range(self.n_embedding_layers):
             d_in = self.input_dim if len(self.input_proj) == 0 else self.transformer_dim
-            mlp_layer = nn.Sequential(nn.Linear(d_in, self.transformer_dim), self.activation_function)
+            mlp_layer = nn.Sequential(nn.Linear(d_in, self.transformer_dim), nn.ReLU())
             self.input_proj.append(mlp_layer)
 
 
