@@ -701,7 +701,7 @@ class Network_User(object):
         harwindows_test = HARWindows(csv_file=self.config['dataset_root'] + "test.csv",
                                      root_dir=self.config['dataset_root'])
 
-        dataLoader_test = DataLoader(harwindows_test, batch_size=self.config['batch_size_train'], shuffle=False)
+        dataLoader_test = DataLoader(harwindows_test, batch_size=self.config['batch_size_train'], shuffle=False, drop_last=True)
 
         # Creating a network and loading the weights for testing
         # network is loaded from saved file in the folder of experiment
