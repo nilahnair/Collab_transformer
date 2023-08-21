@@ -75,6 +75,7 @@ class Network(nn.Module):
         self.n_embedding_layers = n_embedding_layers
         self.temporal_encoding_type = "wave"
         mlp_embedding: bool = False
+        self.activation_function = activation_function
         
         
         # Positional encoding (temporal)
