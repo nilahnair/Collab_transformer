@@ -19,8 +19,8 @@ import torch.optim as optim
 
 from torch.nn.init import xavier_uniform_
 
-from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
+#from sb3_rl.feature_extractors.common.utils import tensor_from_observations_dict, create_mask_float, init_weights_xavier
+#from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, create_mlp
 
 #from sb3_rl.feature_extractors.common.positional_encoding import PositionalEncoding
 from positional_encodings.torch_encodings import PositionalEncoding1D, PositionalEncoding2D, PositionalEncoding3D, Summer
@@ -115,7 +115,8 @@ class Network(nn.Module):
                                       self.activation_function, nn.Dropout(0.1), nn.Linear(self.transformer_dim//4, self.output_dim))
         
         
-        self.transformer_encoder.apply(init_weights_xavier)
+        #self.transformer_encoder.apply(init_weights_xavier)
+        nn.init.xavier_normal(self.transformer_encoder)
         
         self.softmax = nn.Softmax()
         
