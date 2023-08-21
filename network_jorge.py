@@ -95,6 +95,7 @@ class Network(nn.Module):
         self.input_proj = nn.ModuleList()
         for _ in range(self.n_embedding_layers):
             d_in = self.input_dim if len(self.input_proj) == 0 else self.transformer_dim
+            print(d_in.shape)
             mlp_layer = nn.Sequential(nn.Linear(d_in, self.transformer_dim), nn.ReLU())
             self.input_proj.append(mlp_layer)
             
@@ -143,6 +144,7 @@ class Network(nn.Module):
                
         #input embedding
         for mlp_layer in self.input_proj:
+            print(mlp_layer.shape)
             x = mlp_layer(x)
             
         # Reshaping: [B, D', Win] -> [Win, B, D'] 
@@ -153,8 +155,8 @@ class Network(nn.Module):
         x = th.cat([cls_token, x])
         
         #position embedding
-        if self.use_pos_embedding:
-            x += self.position_embed
+        if self.temporal_encoding_type == "wave":
+            x = self.positional_encoding(x)
             
         #transformer
         # Transformer Encoder pass
