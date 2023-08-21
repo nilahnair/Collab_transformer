@@ -111,7 +111,7 @@ class Network(nn.Module):
         )
         self.transformer_encoder = th.nn.TransformerEncoder(
             encoder_layer=transformer_encoder,
-            num_layers=self.num_transformer_layers,
+            num_layers=self.n_layers,
         )
         
          #setting mlp layers
