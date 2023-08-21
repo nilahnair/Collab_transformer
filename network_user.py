@@ -198,7 +198,7 @@ class Network_User(object):
                                          root_dir=self.config['dataset_root'])
 
         # Creating the dataloader
-        dataLoader_train = DataLoader(harwindows_train, batch_size=self.config['batch_size_train'], shuffle=True)
+        dataLoader_train = DataLoader(harwindows_train, batch_size=self.config['batch_size_train'], shuffle=True, drop_last=True)
 
         # Setting the network
         logging.info('        Network_User:    Train:    creating network')
@@ -641,8 +641,8 @@ class Network_User(object):
                 if self.config['output'] == 'softmax':
                     loss = criterion(predictions, test_batch_l)
                 elif self.config['output'] == 'attribute':
-                    print(predictions.shape)
-                    print(test_batch_l.shape)
+                    #print(predictions.shape)
+                    #print(test_batch_l.shape)
                     loss = criterion(predictions, test_batch_l[:, 1:])
                 loss_val = loss_val + loss.item()
 
