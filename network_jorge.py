@@ -78,6 +78,7 @@ class Network(nn.Module):
         mlp_embedding: bool = False
         self.activation_function = activation_function
         self.norm_first = norm_first
+        self.dropout=0.4
         
         
         # Positional encoding (temporal)
