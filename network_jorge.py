@@ -167,3 +167,5 @@ class Network(nn.Module):
         if not self.training:
             if self.config['output'] == 'softmax':
                 x = self.softmax(x)
+                    
+        return x
