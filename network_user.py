@@ -593,7 +593,7 @@ class Network_User(object):
         harwindows_val = HARWindows(csv_file=self.config['dataset_root'] + "val.csv",
                                     root_dir=self.config['dataset_root'])
 
-        dataLoader_val = DataLoader(harwindows_val, batch_size=self.config['batch_size_val'])
+        dataLoader_val = DataLoader(harwindows_val, batch_size=self.config['batch_size_val'], drop_last=True)
 
         # Setting the network to eval mode
         network_obj.eval()
