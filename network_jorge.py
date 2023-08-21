@@ -120,7 +120,7 @@ class Network(nn.Module):
         
         
         #self.transformer_encoder.apply(init_weights_xavier)
-        nn.init.xavier_normal(self.transformer_encoder)
+        nn.init.xavier_normal(self.transformer_encoder.weight)
         
         self.softmax = nn.Softmax()
         
