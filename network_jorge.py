@@ -97,6 +97,9 @@ class Network(nn.Module):
             d_in = self.input_dim if len(self.input_proj) == 0 else self.transformer_dim
             mlp_layer = nn.Sequential(nn.Linear(d_in, self.transformer_dim), nn.ReLU())
             self.input_proj.append(mlp_layer)
+            
+        #setting parameters
+        self.cls_token = nn.Parameter(th.zeros((1, self.transformer_dim)))
 
 
         # TRANSFORMER ENCODER
@@ -120,7 +123,10 @@ class Network(nn.Module):
         
         
         #self.transformer_encoder.apply(init_weights_xavier)
-        nn.init.xavier_normal(self.transformer_encoder.weight)
+        #nn.init.xavier_normal(self.transformer_encoder.weight)
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
         
         self.softmax = nn.Softmax()
         
