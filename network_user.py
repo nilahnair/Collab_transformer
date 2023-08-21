@@ -352,8 +352,8 @@ class Network_User(object):
                         train_batch_l = harwindow_batched["labels"][:, :, 0]
                         train_batch_l = train_batch_l.reshape(-1)
                     elif self.config["fully_convolutional"] == "FC":
-                        print('harwindow batch')
-                        print(harwindow_batched["label"].shape)
+                        #print('harwindow batch')
+                        p#rint(harwindow_batched["label"].shape)
                         #train_batch_l = harwindow_batched["label"]
                         train_batch_l = harwindow_batched["label"][:, 0]
                         train_batch_l = train_batch_l.reshape(-1)
