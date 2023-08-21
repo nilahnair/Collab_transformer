@@ -69,6 +69,7 @@ class Network(nn.Module):
         self.window_size = self.config['sliding_window_length']
         self.transformer_dim = transformer_dim if n_embedding_layers > 0 else self.input_dim
         d_model= dim_fully_connected
+        self.n_heads= n_head
         self.dim_fc = dim_fc
         self.dim_fully_connected = dim_fully_connected
         self.n_layers = n_layers
@@ -100,7 +101,7 @@ class Network(nn.Module):
         # ===================================================================================================
         transformer_encoder = th.nn.TransformerEncoderLayer(
             d_model=self.dim_fully_connected,  # TODO Check
-            nhead=self.num_transformer_heads,
+            nhead=self.n_heads,
             dim_feedforward=self.dim_transformer_feedforward,
             norm_first=self.norm_first,
             batch_first=True,
