@@ -145,7 +145,7 @@ class Network(nn.Module):
         #print('after getting embedding')
         #print(x.shape)
         #Reshaping: [B, D', Win] -> [Win, B, D'] 
-        x = x.permute(2, 0, 1)
+        #x = x.permute(2, 0, 1)
         
         # Prepend class token: [Win, B, D']  -> [Win+1, B, D']
         #cls_token = self.cls_token.unsqueeze(1).repeat(1, x.shape[1], 1)
