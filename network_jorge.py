@@ -71,14 +71,13 @@ class Network(nn.Module):
         d_model= dim_fully_connected
         self.n_heads= n_head
         self.dim_fc = dim_fc
-        self.dim_fully_connected = dim_fully_connected
         self.n_layers = n_layers
         self.n_embedding_layers = n_embedding_layers
         self.temporal_encoding_type = "wave"
-        mlp_embedding: bool = False
+        mlp_embedding: bool = True
         self.activation_function = nn.ReLU()
         self.norm_first = norm_first
-        self.dropout=0.4
+        self.dropout=0.1
         
         
         # Positional encoding (temporal)
@@ -89,23 +88,29 @@ class Network(nn.Module):
             self.positional_encoding = self.add_time_encoding_to_tensor
 
         elif self.temporal_encoding_type == "wave":
-            self.positional_encoding = Summer(PositionalEncoding1D(self.dim_fully_connected))
+            self.positional_encoding = Summer(PositionalEncoding1D(self.transformer_dim))
             
         #input embedding
         self.input_proj = nn.ModuleList()
         for _ in range(self.n_embedding_layers):
             d_in = self.input_dim if len(self.input_proj) == 0 else self.transformer_dim
-            mlp_layer = nn.Sequential(nn.Linear(d_in, self.transformer_dim), nn.ReLU())
+            mlp_layer = nn.Sequential(nn.Linear(d_in, self.transformer_dim), nn.ReLU(),
+                                      nn.Linear(self.transformer_dim, self.transformer_dim), nn.ReLU())
             self.input_proj.append(mlp_layer)
             
         #setting parameters
         self.cls_token = nn.Parameter(th.zeros((1, self.transformer_dim)))
+        
+        #setting positional encoding
+        if self.use_pos_embedding:
+            self.position_embed = nn.Parameter(th.randn(self.window_size + 1, 1, self.transformer_dim))
+        
 
 
         # TRANSFORMER ENCODER
         # ===================================================================================================
         transformer_encoder = th.nn.TransformerEncoderLayer(
-            d_model=self.dim_fully_connected,  # TODO Check
+            d_model=self.transformer_dim,  # TODO Check
             nhead=self.n_heads,
             dim_feedforward=self.dim_fc,
             norm_first=self.norm_first,
@@ -147,8 +152,8 @@ class Network(nn.Module):
             x = mlp_layer(x)
         #print('after getting embedding')
         #print(x.shape)
-        # Reshaping: [B, D', Win] -> [Win, B, D'] 
-        #x = x.permute(2, 0, 1)
+        #Reshaping: [B, D', Win] -> [Win, B, D'] 
+        x = x.permute(2, 0, 1)
         
         # Prepend class token: [Win, B, D']  -> [Win+1, B, D']
         cls_token = self.cls_token.unsqueeze(1).repeat(1, x.shape[1], 1)
@@ -156,7 +161,7 @@ class Network(nn.Module):
         
         #position embedding
         if self.temporal_encoding_type == "wave":
-            x = self.positional_encoding(x)
+            x += self.positional_encoding(x)
             
         #transformer
         # Transformer Encoder pass
