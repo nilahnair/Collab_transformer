@@ -150,10 +150,12 @@ class Network(nn.Module):
         # Prepend class token: [Win, B, D']  -> [Win+1, B, D']
         #cls_token = self.cls_token.unsqueeze(1).repeat(1, x.shape[1], 1)
         #x = th.cat([cls_token, x])
-        
+        #if self.temporal_encoding_type == "single":
+        #    input[self.temporal_encoding_vec_ind] = self.self.positional_encoding(input[self.temporal_encoding_vec_ind])
+
         #position embedding
         if self.temporal_encoding_type == "wave":
-            x = self.positional_encoding(x)
+           x += self.positional_encoding(x)
             
         #transformer
         # Transformer Encoder pass
