@@ -102,7 +102,7 @@ class Network(nn.Module):
         self.cls_token = nn.Parameter(th.zeros((1, self.transformer_dim)))
         
         #setting positional encoding
-        if self.use_pos_embedding:
+        if use_pos_embedding:
             self.position_embed = nn.Parameter(th.randn(self.window_size + 1, 1, self.transformer_dim))
         
 
