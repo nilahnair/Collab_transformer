@@ -98,15 +98,7 @@ class Network(nn.Module):
                                       nn.Linear(self.transformer_dim, self.transformer_dim), nn.ReLU())
             self.input_proj.append(mlp_layer)
             
-        #setting parameters
-        self.cls_token = nn.Parameter(th.zeros((1, self.transformer_dim)))
         
-        #setting positional encoding
-        if use_pos_embedding:
-            self.position_embed = nn.Parameter(th.randn(self.window_size + 1, 1, self.transformer_dim))
-        
-
-
         # TRANSFORMER ENCODER
         # ===================================================================================================
         transformer_encoder = th.nn.TransformerEncoderLayer(
@@ -156,12 +148,12 @@ class Network(nn.Module):
         x = x.permute(2, 0, 1)
         
         # Prepend class token: [Win, B, D']  -> [Win+1, B, D']
-        cls_token = self.cls_token.unsqueeze(1).repeat(1, x.shape[1], 1)
-        x = th.cat([cls_token, x])
+        #cls_token = self.cls_token.unsqueeze(1).repeat(1, x.shape[1], 1)
+        #x = th.cat([cls_token, x])
         
         #position embedding
         if self.temporal_encoding_type == "wave":
-            x += self.positional_encoding(x)
+            x = self.positional_encoding(x)
             
         #transformer
         # Transformer Encoder pass
