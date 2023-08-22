@@ -155,7 +155,7 @@ class Network(nn.Module):
 
         #position embedding
         if self.temporal_encoding_type == "wave":
-           x += self.positional_encoding(x)
+           x = self.positional_encoding(x)
             
         #transformer
         # Transformer Encoder pass
